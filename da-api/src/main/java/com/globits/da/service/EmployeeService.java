@@ -2,32 +2,39 @@ package com.globits.da.service;
 
 import com.globits.core.service.GenericService;
 import com.globits.da.domain.Employee;
-import com.globits.da.dto.EmployeeDTO;
-import com.globits.da.dto.ResponseRequest;
+import com.globits.da.dto.ContainQueryData;
+import com.globits.da.dto.EmployeeDto;
+import com.globits.da.dto.ResponseData;
+import com.globits.da.dto.search.EmployeeSearchDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-@Service
 public interface EmployeeService extends GenericService<Employee, UUID> {
-    public List<EmployeeDTO> getAll();
+    List<EmployeeDto> getAll();
 
-    public ResponseRequest<EmployeeDTO> insert(EmployeeDTO employeeDTO);
+    ResponseData<EmployeeDto> insert(EmployeeDto employeeDTO);
 
-    public ResponseRequest<EmployeeDTO> update(UUID id,EmployeeDTO employeeDTO);
+    ResponseData<EmployeeDto> update(UUID id, EmployeeDto employeeDTO);
 
-    public Boolean deleteById(UUID uuid);
+    List<EmployeeDto> findAllByEmployeeHaveMoreThanTwoCertificate();
 
-    public void saveAll(List<EmployeeDTO> employeeDTOList);
+    List<EmployeeSearchDTO> countEmployeeGroupByProvince(UUID id);
+    List<ContainQueryData>calculatePercentageOfEmployeesWithDiplomas();
 
-    public List<EmployeeDTO> findByAllKeyword(String keyword);
+    boolean deleteById(UUID uuid);
 
-    public Optional<EmployeeDTO> findEmployeeById(UUID id);
+    void saveAll(List<EmployeeDto> employeeDTOList);
+
+
+    List<String> importExcel(MultipartFile multipartFile) throws IOException;
+
+    List<EmployeeDto> exportExcel() throws IOException;
 
     Page<Employee> getPage(Pageable pageable);
-    public List<Employee> getAllEmployee();
+
 }

@@ -1,7 +1,5 @@
 package com.globits.da;
 
-import com.globits.da.common.ErrorMessage;
-
 import java.util.regex.Pattern;
 
 public class Constants {
@@ -10,9 +8,14 @@ public class Constants {
     public static final int MAX_LENGTH_CODE = 10;
     public static final int MAX_LENGTH_PHONE = 11;
     public static final String SPACE = " ";
+    public static final int DEFAULT_PAGE_SIZE = 20;
+    public static final String UPDATE = "update";
+    public static final String INSERT = "insert";
+
+    public static final String DELETE = "delete";
     public static final String REGEX_VALID_PHONE = "[0-9]+[\\.]?[0-9]*";
     public static final Pattern VALID_EMAIL_ADDRESS_REGEX = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
-
+    public static String title[] = {"Id", "Code", "NAME", "EMAIL", "Phone", "Age", "ProvinceId", "DistrictId", "CommuneId"};
 
     public static enum StaffType {
         Sale(1), // nhân viên bán hàng

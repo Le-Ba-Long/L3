@@ -1,10 +1,5 @@
 package com.globits.config;
 
-import java.util.Properties;
-
-import javax.persistence.EntityManagerFactory;
-import javax.sql.DataSource;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +10,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.instrument.classloading.InstrumentationLoadTimeWeaver;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.DatabasePopulator;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.orm.hibernate5.HibernateExceptionTranslator;
@@ -24,6 +18,9 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.persistence.EntityManagerFactory;
+import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
@@ -36,7 +33,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 		"com.globits.security.service.impl",
 		// Real Estate
 		"com.globits.da.domain", "com.globits.da.repository", "com.globits.da.dto", "com.globits.da.service",
-		"com.globits.da.service.impl",
+		"com.globits.da.service.impl","com.globits.da.validate",
 		//CoreSys
 		"com.globits.core.sys.domain", "com.globits.core.sys.repository", "com.globits.core.sys.dto", "com.globits.core.sys.service",
 		"com.globits.core.sys.service.impl",})

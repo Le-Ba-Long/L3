@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,12 +15,14 @@ import java.util.Date;
 @Setter
 public class CertificateDto extends BaseObjectDto {
     private String code;
-    private String name;
-    private String grantedBy;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private Date dateStartEffect;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private Date dateEndEffect;
-    private ProvinceDto province;
 
+    private String name;
+
+    private String grantedBy;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    private LocalDate dateStartEffect;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    private LocalDate dateEndEffect;
 }

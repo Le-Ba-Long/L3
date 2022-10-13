@@ -12,7 +12,10 @@ import lombok.Setter;
 @Setter
 public class ProvinceSearchDto extends BaseObjectDto {
     private String keyword;
+
     private String orderBy;
+
     private Integer pageIndex;
+
     private Integer pageSize;
 }

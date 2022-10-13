@@ -3,163 +3,171 @@ package com.globits.da.validate;
 import com.globits.core.dto.BaseObjectDto;
 import com.globits.da.Constants;
 import com.globits.da.common.ErrorMessage;
+import com.globits.da.dto.CertificateDto;
+import com.globits.da.dto.CommuneDto;
+import com.globits.da.dto.DistrictDto;
+import com.globits.da.dto.ProvinceDto;
+import com.globits.da.repository.CertificateRepository;
+import com.globits.da.repository.CommuneRepository;
+import com.globits.da.repository.DistrictRepository;
+import com.globits.da.repository.ProvinceRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
-import java.util.regex.Matcher;
+import static com.globits.da.common.ErrorMessage.*;
 
-public abstract class ValidateBase extends BaseObjectDto {
+@Component
+public class ValidateBase extends BaseObjectDto {
+    private static ProvinceRepository provinceRepository;
+    private static DistrictRepository districtRepository;
+    private static CommuneRepository communeRepository;
+    private static CertificateRepository certificateRepository;
 
-
-    public static Boolean checkIdIsNull(Integer id) {
-        return id == null;
+    @Autowired
+    public ValidateBase(ProvinceRepository provinceRepository,
+                        DistrictRepository districtRepository,
+                        CommuneRepository communeRepository,
+                        CertificateRepository certificateRepository) {
+        ValidateBase.provinceRepository = provinceRepository;
+        ValidateBase.districtRepository = districtRepository;
+        ValidateBase.communeRepository = communeRepository;
+        ValidateBase.certificateRepository = certificateRepository;
     }
 
-    public static ErrorMessage checkCodeIsNull(String code) {
-        if (code == null || code.isEmpty())
-            return ErrorMessage.CODE_IS_NULL;
-        return ErrorMessage.SUCCESS;
+    public ValidateBase() {
     }
 
-    public static ErrorMessage checkValidLengthOfCode(String code) {
-        if ((code.length() < Constants.MIN_LENGTH_CODE || code.length() > Constants.MAX_LENGTH_CODE))
-            return ErrorMessage.LENGTH_CODE_INVALID;
-        return ErrorMessage.SUCCESS;
+
+    public static ErrorMessage isValidCode(String code) {
+        if (StringUtils.isEmpty(code)) return CODE_IS_NULL;
+        if (code.contains(Constants.SPACE)) return CHARACTER_CODE_INVALID;
+        return SUCCESS;
     }
 
-    public static ErrorMessage checkValidCodeContainSpace(String code) {
-        if (code.contains(Constants.SPACE))
-            return ErrorMessage.CHARACTER_CODE_INVALID;
-        return ErrorMessage.SUCCESS;
+    public static ErrorMessage isValidName(String name) {
+        if (StringUtils.isEmpty(name)) return NAME_IS_NULL;
+        return SUCCESS;
     }
 
-    public static ErrorMessage checkNameIsNull(String name) {
-        if (name == null || name.isEmpty())
-            return ErrorMessage.NAME_IS_NULL;
-        return ErrorMessage.SUCCESS;
-
+    public static ErrorMessage checkValidDto(Object obj, String action) {
+        if (obj instanceof ProvinceDto) return checkValidProvinceDto(obj, action);
+        if (obj instanceof DistrictDto) return checkValidDistrictDto(obj, action);
+        if (obj instanceof CommuneDto) return checkValidCommuneDto(obj, action);
+        if (obj instanceof CertificateDto) return checkValidCertificate(obj, action);
+        return SUCCESS;
     }
 
-    public static ErrorMessage checkEmailIsNull(String email) {
-        if (email == null || email.isEmpty())
-            return ErrorMessage.EMAIL_IS_NULL;
-        return ErrorMessage.SUCCESS;
-
-    }
-
-    public static ErrorMessage checkValidEmail(String email) {
-        Matcher matcher = Constants.VALID_EMAIL_ADDRESS_REGEX.matcher(email);
-        if (matcher.find())
-            return ErrorMessage.EMAIL_INVALID;
-        return ErrorMessage.SUCCESS;
-
-    }
-
-    public static ErrorMessage checkPhoneIsNull(String phone) {
-        if (phone == null || phone.isEmpty())
-            return ErrorMessage.PHONE_IS_NULL;
-        return ErrorMessage.SUCCESS;
-    }
-
-    public static ErrorMessage checkValidLengthOfPhone(String phone) {
-        if ((phone.length() < Constants.MAX_LENGTH_PHONE))
-            return ErrorMessage.LENGTH_PHONE_INVALID;
-        return ErrorMessage.SUCCESS;
-    }
-
-    public static ErrorMessage checkValidPhoneIsNumber(String phone) {
-        if (phone.matches(Constants.REGEX_VALID_PHONE))
-            return ErrorMessage.CHARACTER_PHONE_INVALID;
-        return ErrorMessage.SUCCESS;
-    }
-
-    public static ErrorMessage checkValidAge(int age) {
-        if (age > 0)
-            return ErrorMessage.AGE_INVALID;
-        return ErrorMessage.SUCCESS;
-    }
-
-    public static ErrorMessage checkDistrictIsNull(String district) {
-        if (district == null || district.isEmpty())
-            return ErrorMessage.DISTRICT_IS_NULL;
-        return ErrorMessage.SUCCESS;
-    }
-
-    public static ErrorMessage checkCommuneIsNull(String commune) {
-        if (commune == null || commune.isEmpty())
-            return ErrorMessage.COMMUNE_IS_NULL;
-        return ErrorMessage.SUCCESS;
-    }
-
-    public static int resultStatusCode(ErrorMessage resultErrorMessage) {
-        switch (resultErrorMessage) {
-            case ID_IS_EXIST:
-                return ErrorMessage.ID_IS_EXIST.getCode();
-            case CODE_IS_EXIST:
-                return ErrorMessage.CODE_IS_EXIST.getCode();
-            case CODE_IS_NULL:
-                return ErrorMessage.CODE_IS_NULL.getCode();
-            case CHARACTER_CODE_INVALID:
-                return ErrorMessage.CHARACTER_CODE_INVALID.getCode();
-            case LENGTH_CODE_INVALID:
-                return ErrorMessage.LENGTH_CODE_INVALID.getCode();
-            case NAME_IS_EXIST:
-                return ErrorMessage.NAME_IS_EXIST.getCode();
-            case NAME_IS_NULL:
-                return ErrorMessage.NAME_IS_NULL.getCode();
-            case PROVINCE_ID_NOT_EXIST:
-                return ErrorMessage.PROVINCE_ID_NOT_EXIST.getCode();
-            case EMAIL_IS_NULL:
-                return ErrorMessage.EMAIL_IS_NULL.getCode();
-            case EMAIL_INVALID:
-                return ErrorMessage.EMAIL_INVALID.getCode();
-            case AGE_INVALID:
-                return ErrorMessage.AGE_INVALID.getCode();
-            case PHONE_IS_NULL:
-                return ErrorMessage.PHONE_IS_NULL.getCode();
-            case LENGTH_PHONE_INVALID:
-                return ErrorMessage.LENGTH_PHONE_INVALID.getCode();
-            case CHARACTER_PHONE_INVALID:
-                return ErrorMessage.CHARACTER_PHONE_INVALID.getCode();
-            case COMMUNE_IS_NULL:
-                return ErrorMessage.COMMUNE_IS_NULL.getCode();
-            case COMMUNE_NOT_FOUND:
-                return ErrorMessage.COMMUNE_NOT_FOUND.getCode();
-            case COMMUNE_NOT_IN_DISTRICT:
-                return ErrorMessage.COMMUNE_NOT_IN_DISTRICT.getCode();
-            case DISTRICT_IS_NULL:
-                return ErrorMessage.DISTRICT_IS_NULL.getCode();
-            case DISTRICT_NOT_FOUND:
-                return ErrorMessage.DISTRICT_NOT_FOUND.getCode();
-            case DISTRICT_NOT_IN_PROVINCE:
-                return ErrorMessage.DISTRICT_NOT_IN_PROVINCE.getCode();
-            case PROVINCE_IS_NULL:
-                return ErrorMessage.PROVINCE_IS_NULL.getCode();
-            case PROVINCE_NOT_FOUND:
-                return ErrorMessage.PROVINCE_NOT_FOUND.getCode();
-            case EMPLOYEE_IS_NULL:
-                return ErrorMessage.EMPLOYEE_IS_NULL.getCode();
-            case EMPLOYEE_NOT_FOUND:
-                return ErrorMessage.EMPLOYEE_NOT_FOUND.getCode();
-            case DIPLOMA_NOT_FOUND:
-                return ErrorMessage.DIPLOMA_NOT_FOUND.getCode();
-            case DIPLOMA_HAS_EFFECT:
-                return ErrorMessage.DIPLOMA_HAS_EFFECT.getCode();
-            case NUMBER_DIPLOMA_EXCEED:
-                return ErrorMessage.NUMBER_DIPLOMA_EXCEED.getCode();
-            case FILE_EXCEL_IS_Blank:
-                return ErrorMessage.FILE_EXCEL_IS_Blank.getCode();
-            case EXPORT_FILE_FAIL:
-                return ErrorMessage.EXPORT_FILE_FAIL.getCode();
-            case LIST_IS_EMPTY:
-                return ErrorMessage.LIST_IS_EMPTY.getCode();
-            case EMAIL_IS_EXIST:
-                return ErrorMessage.EMAIL_IS_EXIST.getCode();
-            case NOT_SUCCESS:
-                return ErrorMessage.NOT_SUCCESS.getCode();
-            case SUCCESS:
-                return ErrorMessage.SUCCESS.getCode();
-
+    public static ErrorMessage checkValidProvinceDto(Object obj, String action) {
+        if (obj instanceof ProvinceDto) {
+            ProvinceDto provinceDto = ((ProvinceDto) obj);
+            if (Constants.INSERT.equals(action)) {
+                if (ObjectUtils.isEmpty(obj)) return PROVINCE_IS_NULL;
+                ErrorMessage errorMessage = isValidCode(provinceDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+                if (Boolean.TRUE.equals(provinceRepository.existsProvinceByCode(provinceDto.getCode()))) return CODE_IS_EXIST;
+                if (Boolean.TRUE.equals(provinceRepository.existsProvinceByName(provinceDto.getName()))) return NAME_IS_EXIST;
+            }
+            if (Constants.UPDATE.equals(action)) {
+                if (ObjectUtils.isEmpty(obj)) return PROVINCE_IS_NULL;
+                if (Boolean.TRUE.equals(provinceRepository.existsProvinceByCode(provinceDto.getCode()))) return CODE_IS_EXIST;
+                if (Boolean.TRUE.equals(provinceRepository.existsProvinceById(provinceDto.getId()))) return ID_NOT_EXIST;
+                ErrorMessage errorMessage = isValidCode(provinceDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+            }
         }
-        return 0;
+        return SUCCESS;
     }
 
+    public static ErrorMessage checkValidDistrictDto(Object obj, String action) {
+        if (obj instanceof DistrictDto) {
+            DistrictDto districtDto = ((DistrictDto) obj);
+            if (Constants.INSERT.equals(action)) {
+                if (ObjectUtils.isEmpty(obj)) return DISTRICT_IS_NULL;
+                ErrorMessage errorMessage = isValidCode(districtDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+                if (Boolean.TRUE.equals(districtRepository.existsDistrictByCode(districtDto.getCode()))) return CODE_IS_EXIST;
+                if (Boolean.TRUE.equals(districtRepository.existsDistrictByName(districtDto.getName()))) return NAME_IS_EXIST;
+                if (districtDto.getProvinceDto() != null
+                        && districtDto.getProvinceDto().getId() != null
+                        && districtDto.getId() != null
+                        && districtRepository.findByIdAndProvinceId
+                        (districtDto.getId(), districtDto.getProvinceDto().getId()) == null)
+                        return DISTRICT_NOT_IN_PROVINCE;
+                }
+            if (Constants.UPDATE.equals(action)) {
+                if (ObjectUtils.isEmpty(obj)) return DISTRICT_IS_NULL;
+                if (Boolean.TRUE.equals(districtRepository.existsDistrictByCode(districtDto.getCode()))) return CODE_IS_EXIST;
+                ErrorMessage errorMessage = isValidCode(districtDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+                if (districtDto.getProvinceDto() != null
+                        && districtDto.getProvinceDto().getId() != null
+                        && districtDto.getId() != null
+                        && districtRepository.findByIdAndProvinceId
+                        (districtDto.getId(), districtDto.getProvinceDto().getId()) == null)
+                        return DISTRICT_NOT_IN_PROVINCE;
+            }
+        }
+        return SUCCESS;
+    }
+
+    public static ErrorMessage checkValidCommuneDto(Object obj, String action) {
+        if (obj instanceof CommuneDto) {
+            CommuneDto communeDto = ((CommuneDto) obj);
+            if (Constants.UPDATE.equals(action)) {
+                if (ObjectUtils.isEmpty(obj)) return COMMUNE_IS_NULL;
+                if (Boolean.FALSE.equals(communeRepository.existsCommuneById(communeDto.getId()))) return ID_NOT_EXIST;
+                if (Boolean.TRUE.equals(communeRepository.existsCommuneByCode(communeDto.getCode()))) return CODE_IS_EXIST;
+                ErrorMessage errorMessage = isValidCode(communeDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+                if (communeDto.getDistrictDto() != null
+                        && communeDto.getDistrictDto().getId() != null
+                        && communeDto.getId() != null
+                        && communeRepository.findByIdAndDistrictId
+                        (communeDto.getId(), communeDto.getDistrictDto().getId()) == null)
+                        return COMMUNE_NOT_IN_DISTRICT;
+            }
+            if (action.equals(Constants.INSERT)) {
+                if (ObjectUtils.isEmpty(obj)) return COMMUNE_IS_NULL;
+                if (communeDto.getDistrictDto() != null
+                        && communeDto.getDistrictDto().getId() != null
+                        && Boolean.FALSE.equals
+                        (districtRepository.existsDistrictById(communeDto.getDistrictDto().getId())))
+                        return DISTRICT_NOT_FOUND;
+                }
+                ErrorMessage errorMessage = isValidCode(communeDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+                if (Boolean.TRUE.equals(communeRepository.existsCommuneByCode(communeDto.getCode()))) return CODE_IS_EXIST;
+                if (Boolean.TRUE.equals(communeRepository.existsCommuneByName(communeDto.getName()))) return NAME_IS_EXIST;
+                if (communeDto.getDistrictDto() != null
+                        && communeDto.getDistrictDto().getId() != null
+                        && communeDto.getId() != null
+                        && communeRepository.findByIdAndDistrictId(communeDto.getId()
+                        , communeDto.getDistrictDto().getId()) == null)
+                        return COMMUNE_NOT_IN_DISTRICT;
+        }
+        return SUCCESS;
+    }
+
+    public static ErrorMessage checkValidCertificate(Object obj, String action) {
+        if (obj instanceof CertificateDto) {
+            CertificateDto certificateDto = ((CertificateDto) obj);
+            if (action.equals(Constants.INSERT)) {
+                if (ObjectUtils.isEmpty(obj)) return CERTIFICATE_IS_NULL;
+                ErrorMessage errorMessage = isValidCode(certificateDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+                if (certificateRepository.existsCertificateByCode(certificateDto.getCode())) return CODE_IS_EXIST;
+                if (certificateRepository.existsCertificateByName(certificateDto.getName())) return NAME_IS_EXIST;
+            }
+            if (Constants.UPDATE.equals(action)) {
+                if (ObjectUtils.isEmpty(obj)) return CERTIFICATE_IS_NULL;
+                if (Boolean.FALSE.equals(certificateRepository.existsCertificateById(certificateDto.getId()))) return ID_NOT_EXIST;
+                if (certificateRepository.existsCertificateByCode(certificateDto.getCode())) return CODE_IS_EXIST;
+                ErrorMessage errorMessage = isValidCode(certificateDto.getCode());
+                if (!SUCCESS.equals(errorMessage)) return errorMessage;
+            }
+        }
+        return SUCCESS;
+    }
 }

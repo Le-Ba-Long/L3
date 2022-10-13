@@ -9,9 +9,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,16 +20,19 @@ import java.util.Set;
 public class District extends BaseObject {
     @Column(name = "code", columnDefinition = "nvarchar(255)", nullable = false)
     private String code;
+
     @Column(name = "name", columnDefinition = "nvarchar(255)", nullable = false)
     private String name;
-    //@ManyToOne(fetch = FetchType.LAZY,cascade = CascadeType.ALL)
-    // @JoinColumn(name = "province_id", referencedColumnName = "id", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY,cascade = CascadeType.ALL)
-    @JoinColumn(name = "province_id" ,nullable = false)
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH})
+    @JoinColumn(name = "province_id", nullable = false)
     private Province province;
-    @OneToMany(fetch = FetchType.LAZY,mappedBy = "district",cascade = CascadeType.ALL)
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "district", cascade = CascadeType.ALL)
     List<Commune> communes = new ArrayList<>();
- //   private Set<Commune> communes = new HashSet<>();
+
+//    @OneToMany(mappedBy = "district", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+//    List<Employee> employees = new ArrayList<>();
 
 
 }

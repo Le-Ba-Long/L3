@@ -1,6 +1,7 @@
 package com.globits.da.service.impl;
 
 import com.globits.core.service.impl.GenericServiceImpl;
+import com.globits.da.Constants;
 import com.globits.da.common.ErrorMessage;
 import com.globits.da.domain.Commune;
 import com.globits.da.domain.District;
@@ -8,56 +9,46 @@ import com.globits.da.domain.Province;
 import com.globits.da.dto.CommuneDto;
 import com.globits.da.dto.DistrictDto;
 import com.globits.da.dto.ProvinceDto;
-import com.globits.da.dto.ResponseRequest;
-import com.globits.da.dto.search.ProvinceSearchDto;
+import com.globits.da.dto.ResponseData;
 import com.globits.da.repository.CommuneRepository;
 import com.globits.da.repository.DistrictRepository;
 import com.globits.da.repository.ProvinceRepository;
 import com.globits.da.service.ProvinceService;
 import com.globits.da.utils.PageUtil;
-import com.globits.da.validate.ValidateProvince;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.globits.da.common.ErrorMessage.*;
+import static com.globits.da.validate.ValidateBase.checkValidDto;
+
 @Service
 public class ProvinceServiceImpl extends GenericServiceImpl<Province, UUID> implements ProvinceService {
     @Autowired
-    ProvinceRepository provinceRepository;
+    private ProvinceRepository provinceRepository;
     @Autowired
-    DistrictRepository districtRepository;
+    private DistrictRepository districtRepository;
     @Autowired
-    CommuneRepository communeRepository;
+    private CommuneRepository communeRepository;
     @Autowired
-    ModelMapper modelMapper;
-//    @Autowired
-//    DistrictServiceImpl districtService;
+    private ModelMapper modelMapper;
 
     @Override
     public List<ProvinceDto> getAll() {
-        return provinceRepository.findAll()
-                .stream()
-                .map(province -> {
-                    return modelMapper.map(province, ProvinceDto.class);
-                }).collect(Collectors.toList());
+        return provinceRepository.findAll().stream()
+                .map(province -> modelMapper.map(province, ProvinceDto.class)).collect(Collectors.toList());
     }
 
     @Override
-    public ProvinceDto save(ProvinceDto provinceDto) {
-        // provinceDto.setId(UUID.randomUUID());
-        // provinceDto.getId();
-        return modelMapper.map(provinceRepository.save(modelMapper.map(provinceDto, Province.class)), ProvinceDto.class);
-    }
-
-    @Override
-    public Boolean deleteById(UUID uuid) {
+    public boolean deleteById(UUID uuid) {
         if (provinceRepository.existsProvinceById(uuid)) {
             provinceRepository.deleteById(uuid);
             return true;
@@ -66,137 +57,37 @@ public class ProvinceServiceImpl extends GenericServiceImpl<Province, UUID> impl
     }
 
     @Override
-    public ResponseRequest<ProvinceDto> update(UUID id, ProvinceDto provinceDto) {
-        if (provinceRepository.existsProvinceById(id)) {
-            String resultErrorMessage = checkValidCodeAndName(provinceDto).getMessage();
-            String updateSuccess = ErrorMessage.SUCCESS.getMessage();
-            if (updateSuccess.equals(resultErrorMessage)) {
-                Province entity = provinceRepository.getOne(id);
-                entity.setName(provinceDto.getName());
-                entity.setCode(provinceDto.getCode());
-                if (provinceDto.getDistrictDtoList() != null) {
-                    for (DistrictDto districtDto : provinceDto.getDistrictDtoList()) {
-                        if (districtDto.getId() != null) {
-                            districtRepository.findById(districtDto.getId())
-                                    .map(district -> {
-                                        district.setName(districtDto.getName());
-                                        district.setCode(districtDto.getCode());
-                                        district.setProvince(entity);
-                                        return district;
-                                    });
-                            for (CommuneDto communeDto : districtDto.getCommuneDtoList()) {
-                                if (communeDto.getId() != null) {
-                                    communeRepository.findById(communeDto.getId())
-                                            .map(commune -> {
-                                                commune.setName(communeDto.getName());
-                                                commune.setCode(communeDto.getCode());
-                                                //commune.setDistrict(district);
-                                                return commune;
-                                            });
-                                }
-                            }
-                        }
-                    }
-                }
-                return new ResponseRequest<>(
-                        ErrorMessage.SUCCESS.getCode(),
-                        ErrorMessage.SUCCESS.getMessage(),
-                        modelMapper.map(provinceRepository.save(entity),
-                                ProvinceDto.class));
-            } else {
-                return new ResponseRequest<>(
-                        ValidateProvince.resultStatusCode(
-                                checkValidCodeAndName(provinceDto)),
-                        resultErrorMessage, provinceDto);
-            }
-        }
-        return new ResponseRequest<>(ErrorMessage.ID_NOT_EXIST.getCode(), ErrorMessage.ID_NOT_EXIST.getMessage(), provinceDto);
+    public ResponseData<ProvinceDto> insert(ProvinceDto provinceDto) {
+        ResponseData<Province> errorMessage = validateProvince(null, provinceDto, Constants.INSERT);
+        if (SUCCESS.getMessage().equals(errorMessage.getMessageError()))
+            return new ResponseData<>(ProvinceDto.toDto(errorMessage.getData()));
+        return new ResponseData<>(errorMessage.getStatusCode(),errorMessage.getMessageError(), null);
     }
 
     @Override
-    public ResponseRequest<ProvinceDto> insert(ProvinceDto provinceDto) {
-        if (provinceDto != null) {
-            String resultErrorMessage = checkValidProvince(provinceDto).getMessage();
-            String provinceSuccess = ErrorMessage.SUCCESS.getMessage();
-            if (provinceSuccess.equals(resultErrorMessage)) {
-                Province entity = new Province();
-                entity.setCode(provinceDto.getCode());
-                entity.setName(provinceDto.getName());
-                if (provinceDto.getDistrictDtoList() != null) {
-                    entity.setDistricts(initDistrict(provinceDto.getDistrictDtoList(), entity));
-                }
-                return new ResponseRequest<>(
-                        ErrorMessage.SUCCESS.getCode(),
-                        ErrorMessage.SUCCESS.getMessage(),
-                        modelMapper.map(provinceRepository.save(entity),
-                                ProvinceDto.class));
-            }
-            return new ResponseRequest<>(
-                    ValidateProvince.resultStatusCode
-                            (checkValidProvince(provinceDto)),
-                    resultErrorMessage, provinceDto);
-        }
-        return null;
+    public ResponseData<ProvinceDto> update(UUID id, ProvinceDto provinceDto) {
+        ResponseData<Province> errorMessage = validateProvince(id, provinceDto, Constants.UPDATE);
+        if (SUCCESS.getMessage().equals(errorMessage.getMessageError()))
+            return new ResponseData<>(ProvinceDto.toDto(errorMessage.getData()));
+        return new ResponseData<>(errorMessage.getStatusCode(), errorMessage.getMessageError(), null);
     }
-
 
     @Override
     public Page<ProvinceDto> getPage(int pageIndex, int pageSize) {
         Pageable pageable = PageRequest.of(PageUtil.validatePageIndex(pageIndex), PageUtil.validatePageSize(pageSize));
-        return provinceRepository.findAll(pageable)
-                .map(province -> {
-                    return modelMapper.map(province, ProvinceDto.class);
-                });
+        return provinceRepository.findAll(pageable).map(province -> modelMapper.map(province, ProvinceDto.class));
     }
 
-    @Override
-    public Page<ProvinceDto> search(ProvinceSearchDto dto) {
-        return null;
-    }
 
-    @Override
-    public ProvinceDto getByID(UUID uuid) {
-        return modelMapper.map(provinceRepository.findById(uuid), ProvinceDto.class);
-    }
-
-    //kiểm tra xem tỉnh có hợp lệ không ,không hợp lệ trả ra errormessage tương ứng không có trả về  ErrorMessage.SUCCESS
-    public ErrorMessage checkValidProvince(ProvinceDto provinceDto) {
-        ErrorMessage success = ErrorMessage.SUCCESS;
-        if (!ValidateProvince.checkCodeIsNull(provinceDto.getCode()).equals(success)) {
-            return ErrorMessage.CODE_IS_NULL;
-        } else if (provinceRepository.existsProvinceByCode(provinceDto.getCode())) {
-            return ErrorMessage.CODE_IS_EXIST;
-        } else if (!ValidateProvince.checkNameIsNull(provinceDto.getName()).equals(success)) {
-            return ErrorMessage.NAME_IS_NULL;
-        } else if (provinceRepository.existsProvinceByName(provinceDto.getName())) {
-            return ErrorMessage.NAME_IS_EXIST;
-        }
-        return ErrorMessage.SUCCESS;
-    }
-
-    public ErrorMessage checkValidCodeAndName(ProvinceDto provinceDto) {
-        ErrorMessage success = ErrorMessage.SUCCESS;
-        if (!ValidateProvince.checkCodeIsNull(provinceDto.getCode()).equals(success)) {
-            return ErrorMessage.CODE_IS_NULL;
-        } else if (!ValidateProvince.checkNameIsNull(provinceDto.getName()).equals(success)) {
-            return ErrorMessage.NAME_IS_NULL;
-        }
-        return ErrorMessage.SUCCESS;
-    }
-
-    /* khởi tạo một list district từ list districtDto do người dùng nhập vào
-     * sau đó map tương ứng các district dto rồi lưu  vào thành một list distric để
-     * lưu vào Database
-     * */
     public List<District> initDistrict(List<DistrictDto> districtDtoList, Province entity) {
-        if (!districtDtoList.isEmpty() && entity != null) {
+        if (!districtDtoList.isEmpty() && !ObjectUtils.isEmpty(entity)) {
             return districtDtoList.stream()
                     .map(districtDto -> {
                         District district = new District();
                         district.setCode(districtDto.getCode());
                         district.setName(districtDto.getName());
                         district.setProvince(entity);
-                        if (districtDto.getCommuneDtoList() != null) {
+                        if (!ObjectUtils.isEmpty(districtDto.getCommuneDtoList())) {
                             district.setCommunes(initCommune(districtDto.getCommuneDtoList(), district));
                         }
                         return district;
@@ -205,9 +96,8 @@ public class ProvinceServiceImpl extends GenericServiceImpl<Province, UUID> impl
         return null;
     }
 
-
     public List<Commune> initCommune(List<CommuneDto> communeDtoList, District entity) {
-        if (!communeDtoList.isEmpty() && entity != null) {
+        if (!communeDtoList.isEmpty() && !ObjectUtils.isEmpty(entity)) {
             return communeDtoList.stream()
                     .map(communeDto -> {
                         Commune commune = new Commune();
@@ -219,4 +109,65 @@ public class ProvinceServiceImpl extends GenericServiceImpl<Province, UUID> impl
         }
         return null;
     }
+
+    public ResponseData<Province> validateProvince(UUID id, ProvinceDto provinceDto, String action) {
+        if (Constants.INSERT.equals(action)) {
+            if (ObjectUtils.isEmpty(provinceDto)) return new ResponseData<>(PROVINCE_IS_NULL, null);
+            ErrorMessage errorProvince = checkValidDto(provinceDto, action);
+            if (!SUCCESS.equals(errorProvince)) return new ResponseData<>(errorProvince, null);
+            Province entity = new Province();
+            entity.setCode(provinceDto.getCode());
+            entity.setName(provinceDto.getName());
+            if (!ObjectUtils.isEmpty(provinceDto.getDistrictDtoList())) {
+                for (DistrictDto districtDto : provinceDto.getDistrictDtoList()) {
+                    ErrorMessage errDistrict = checkValidDto(districtDto, action);
+                    if (!SUCCESS.equals(errDistrict))
+                        return new ResponseData<>(errDistrict, null);
+                    if (!ObjectUtils.isEmpty(districtDto.getCommuneDtoList())) {
+                        for (CommuneDto communeDto : districtDto.getCommuneDtoList()) {
+                            ErrorMessage errCommune = checkValidDto(communeDto, action);
+                            if (!SUCCESS.equals(errCommune))
+                                return new ResponseData<>(errCommune, null);
+                        }
+                    }
+                }
+                entity.setDistricts(initDistrict(provinceDto.getDistrictDtoList(), entity));
+            }
+            return new ResponseData<>(provinceRepository.save(entity));
+        }
+        if (Constants.UPDATE.equals(action)) {
+            ErrorMessage errorMessage = checkValidDto(provinceDto, action);
+            if (!SUCCESS.equals(errorMessage)) return new ResponseData<>(errorMessage, null);
+            Province province = provinceRepository.getById(id);
+            province.setName(provinceDto.getName());
+            province.setCode(provinceDto.getCode());
+            if (!ObjectUtils.isEmpty(provinceDto.getDistrictDtoList())) {
+                for (DistrictDto districtDto : provinceDto.getDistrictDtoList()) {
+                    ErrorMessage errorDistrict = checkValidDto(districtDto, action);
+                    if (!SUCCESS.equals(errorDistrict)) return new ResponseData<>(errorDistrict, null);
+                    if (!ObjectUtils.isEmpty(districtDto.getId())) {
+                        District district = districtRepository.getById(districtDto.getId());
+                        district.setName(districtDto.getName());
+                        district.setCode(districtDto.getCode());
+                        district.setProvince(province);
+                        if (!ObjectUtils.isEmpty(districtDto.getCommuneDtoList())) {
+                            for (CommuneDto communeDto : districtDto.getCommuneDtoList()) {
+                                ErrorMessage errorCommune = checkValidDto(communeDto, action);
+                                if (!SUCCESS.equals(errorCommune)) return new ResponseData<>(errorCommune, null);
+                                if (!ObjectUtils.isEmpty(communeDto.getId())) {
+                                    Commune commune = communeRepository.getById(communeDto.getId());
+                                    commune.setName(communeDto.getName());
+                                    commune.setCode(communeDto.getCode());
+                                    commune.setDistrict(district);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return new ResponseData<>(provinceRepository.save(province));
+        }
+        return new ResponseData<>(ACTION_NOT_EXIST, null);
+    }
 }
+

@@ -1,8 +1,7 @@
 package com.globits.da.rest;
 
 import com.globits.da.dto.PostDto;
-import com.globits.da.dto.ResponseRequest;
-import com.globits.da.file.ExcelGenerator;
+import com.globits.da.dto.ResponseData;
 import com.globits.da.service.impl.MyFirstApiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,25 +21,25 @@ public class MyFirstApiServiceController {
     MyFirstApiService myFirstApiService;
 
     @PostMapping("/post-dto-param")//Ex 6.1
-    public ResponseEntity<ResponseRequest> postMyFirstAPI(@RequestParam("code") String code, @RequestParam("name") String name, @RequestParam("age") Integer age) {
+    public ResponseEntity<ResponseData> postMyFirstAPI(@RequestParam("code") String code, @RequestParam("name") String name, @RequestParam("age") Integer age) {
        return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(new ResponseRequest(200, "Success", new PostDto(code, name, age)));
+                .body(new ResponseData(200, "Success", new PostDto(code, name, age)));
 
     }
 
     @PostMapping("/post-dto-path-variable/{code}/{name}/{age}")//Ex 10
-    public ResponseEntity<ResponseRequest> postMyFirstAPI(@PathVariable String code, @PathVariable String name, @PathVariable int age) {
+    public ResponseEntity<ResponseData> postMyFirstAPI(@PathVariable String code, @PathVariable String name, @PathVariable int age) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(new ResponseRequest(200, "Success", new PostDto(code, name, age)));
+                .body(new ResponseData(200, "Success", new PostDto(code, name, age)));
     }
 
     @PostMapping("/post-dto-no-body")//Ex 11
-    public ResponseEntity<ResponseRequest> postMyFirstAPI(PostDto postDTO) {
+    public ResponseEntity<ResponseData> postMyFirstAPI(PostDto postDTO) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(new ResponseRequest(200, "Success", postDTO));
+                .body(new ResponseData(200, "Success", postDTO));
     }
 
     @GetMapping("/call-my-first-api-service")
@@ -49,10 +48,10 @@ public class MyFirstApiServiceController {
     }
 
     @PostMapping("/post-dto")
-    public ResponseEntity<ResponseRequest> postDto(@RequestBody PostDto postDto) {
+    public ResponseEntity<ResponseData> postDto(@RequestBody PostDto postDto) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(new ResponseRequest(200, "Query Success",
+                .body(new ResponseData(200, "Query Success",
                         myFirstApiService.getPostDto(postDto)));
     }
 
@@ -73,9 +72,9 @@ public class MyFirstApiServiceController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @PostMapping("/read-file-excel")
-    public ResponseEntity<?> readFileExcel(@RequestParam("file") MultipartFile files) throws IOException {
-        Object obj = ExcelGenerator.readFileExcel(files);
-        return new ResponseEntity<>(obj, HttpStatus.OK);
-    }
+//    @PostMapping("/read-file-excel")
+//    public ResponseEntity<?> readFileExcel(@RequestParam("file") MultipartFile files) throws IOException {
+//        Object obj = ExcelGenerator.readFileExcel(files);
+//        return new ResponseEntity<>(obj, HttpStatus.OK);
+//    }
 }

@@ -1,64 +1,81 @@
 package com.globits.da.file;
 
 
-import com.globits.da.dto.EmployeeDTO;
+import com.globits.da.Constants;
+import com.globits.da.common.CreateCellIndexValue;
+import com.globits.da.common.ErrorMessage;
+import com.globits.da.common.GetCellValueIndex;
+import com.globits.da.domain.Employee;
+import com.globits.da.dto.CommuneDto;
+import com.globits.da.dto.DistrictDto;
+import com.globits.da.dto.EmployeeDto;
+import com.globits.da.dto.ProvinceDto;
+import com.globits.da.service.impl.EmployeeServiceImpl;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.Format;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
+import static com.globits.da.common.ErrorMessage.SUCCESS;
+import static com.globits.da.validate.ValidateEmployee.validateEmployee;
+
+@Component
 public class ExcelGenerator {
-    private static final Path root = Paths.get("E:\\BAI_TAP_LUYEN_TAP\\Thuc Tap Java OcenTech\\Bai Tap Lv 2\\L2_Backend\\uploads");
-    private List<EmployeeDTO> listEmployee;
-    private XSSFWorkbook workbook;
-    private XSSFSheet sheet;
+    private  List<EmployeeDto> employees;
+    private  XSSFWorkbook workbook;
+    private  XSSFSheet sheet;
+    private final  DataFormatter formatter = new DataFormatter();
+    private  EmployeeServiceImpl employeeService;
 
-    public ExcelGenerator(List<EmployeeDTO> listEmployee) {
-        this.listEmployee = listEmployee;
-        workbook = new XSSFWorkbook();
+    @Autowired
+    public ExcelGenerator(EmployeeServiceImpl employeeService) {
+        this.employeeService = employeeService;
     }
 
-    private void writeHeader() throws FileNotFoundException {
+    public ExcelGenerator(List<EmployeeDto> employees) {
+        this.employees = employees;
+        this.workbook = new XSSFWorkbook();
+    }
+
+    private void writeHeader() {
         sheet = workbook.createSheet("list-employee-database");
         Row row = sheet.createRow(0);
         CellStyle style = workbook.createCellStyle();
         XSSFFont font = workbook.createFont();
-        //font.setBold(true);
-        font.setColor(XSSFFont.SS_SUB);
+        font.setBold(true);
+        font.setColor(Font.SS_SUB);
         font.setFamily(10);
         font.setFontHeight(14);
         style.setFont(font);
-        createCell(row, 0, "ID", style);
-        createCell(row, 1, "Code", style);
-        createCell(row, 2, "Name", style);
-        createCell(row, 3, "Email", style);
-        createCell(row, 4, "Phone", style);
-        createCell(row, 5, "Age", style);
-
+        for (int i = 0; i < Constants.title.length; i++)
+            createCell(row, i, Constants.title[i], style);
     }
 
-    private void createCell(Row row, int columnCount, Object cellValue, CellStyle style) {
-        sheet.autoSizeColumn(columnCount);
-        Cell cell = row.createCell(columnCount);
+    private void createCell(Row row, int columnIndex, Object cellValue, CellStyle style) {
+        sheet.autoSizeColumn(columnIndex);
+        Cell cell = row.createCell(columnIndex);
         if (cellValue instanceof Integer) {
             cell.setCellValue((Integer) cellValue);
         } else if (cellValue instanceof Long) {
             cell.setCellValue((Long) cellValue);
         } else if (cellValue instanceof String) {
             cell.setCellValue((String) cellValue);
-        } else {
+        } else if (cellValue instanceof Boolean) {
             cell.setCellValue((Boolean) cellValue);
+        } else if (cellValue instanceof UUID) {
+            cell.setCellValue(String.valueOf(cellValue));
         }
         cell.setCellStyle(style);
     }
@@ -70,30 +87,44 @@ public class ExcelGenerator {
         font.setColor(XSSFFont.DEFAULT_FONT_COLOR);
         font.setFontHeight(12);
         style.setFont(font);
-
-        Collections.sort(listEmployee, new Comparator<EmployeeDTO>() {
-            @Override
-            public int compare(EmployeeDTO o1, EmployeeDTO o2) {
-                return o1.getName().substring(o1.getName().lastIndexOf(' '))
-                        .compareTo(o2.getName().substring(o2.getName().lastIndexOf(' ')));
-            }
-        });
-        for (EmployeeDTO record : listEmployee) {
+        Collections.sort(employees);
+        for (EmployeeDto dto : employees) {
             Row row = sheet.createRow(rowCount++);
-            int columnCount = 0;
-            createCell(row, columnCount++, record.getId(), style);
-            createCell(row, columnCount++, record.getCode(), style);
-            createCell(row, columnCount++, record.getName(), style);
-            createCell(row, columnCount++, record.getEmail(), style);
-            createCell(row, columnCount++, record.getPhone(), style);
-            createCell(row, columnCount++, record.getAge(), style);
-
+            for (int i = 0; i < Constants.title.length; i++)
+                createCellValue(row, i, dto, style);
         }
-        //ghi vào file trong lap top
-        try (OutputStream os = Files.newOutputStream(Paths.get("E:\\BAI_TAP_LUYEN_TAP\\Thuc Tap Java OcenTech\\Bai Tap Lv 2\\test.xlsx"))) {
-            workbook.write(os);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    }
+
+    public void createCellValue(Row row, int columnIndex, EmployeeDto employeeDTO, CellStyle style) {
+        CreateCellIndexValue createCellIndexValue = CreateCellIndexValue.values()[columnIndex];
+        switch (createCellIndexValue) {
+            case ID:
+                createCell(row, columnIndex, employeeDTO.getId(), style);
+                break;
+            case CODE:
+                createCell(row, columnIndex, employeeDTO.getCode(), style);
+                break;
+            case NAME:
+                createCell(row, columnIndex, employeeDTO.getName(), style);
+                break;
+            case EMAIL:
+                createCell(row, columnIndex, employeeDTO.getEmail(), style);
+                break;
+            case PHONE:
+                createCell(row, columnIndex, employeeDTO.getPhone(), style);
+                break;
+            case AGE:
+                createCell(row, columnIndex, employeeDTO.getAge(), style);
+                break;
+            case PROVINCE:
+                createCell(row, columnIndex, employeeDTO.getProvinceDto().getId(), style);
+                break;
+            case DISTRICT:
+                createCell(row, columnIndex, employeeDTO.getDistrictDto().getId(), style);
+                break;
+            case COMMUNE:
+                createCell(row, columnIndex, employeeDTO.getCommuneDto().getId(), style);
+                break;
         }
     }
 
@@ -104,61 +135,75 @@ public class ExcelGenerator {
         workbook.write(outputStream);
         workbook.close();
         outputStream.close();
-
     }
 
-
-    private static Object getCellValue(Cell cell, FormulaEvaluator evaluator) {
-        CellValue cellValue = evaluator.evaluate(cell);
-        switch (cellValue.getCellTypeEnum()) {
-            case BOOLEAN:
-                return cellValue.getBooleanValue();
-            case NUMERIC:
-                return cellValue.getNumberValue();
-            case STRING:
-                return cellValue.getStringValue();
-            case BLANK:
-                return "";
-            case ERROR:
-                return cellValue.getError(cell.getErrorCellValue()).getStringValue();
-            // CELL_TYPE_FORMULA will never happen
-            case FORMULA:
-            default:
-                return null;
-        }
-    }
-
-    public static Object readFileExcel(@RequestParam("file") MultipartFile file) throws IOException {
-        Path filepath = Paths.get(root.toString(), file.getOriginalFilename());
-        OutputStream os = Files.newOutputStream(filepath);
-        os.write(file.getBytes());
-        Object resul = "";
-        List<EmployeeDTO> listEmployeeDto = new ArrayList<>();
-        FileInputStream fileInputStream = new FileInputStream(filepath.toString());
-        XSSFWorkbook workbook = new XSSFWorkbook(fileInputStream);
-        XSSFSheet sheet = workbook.getSheetAt(0);
-        FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-        System.out.println("\n\nIterating over Rows and Columns using Iterator\n");
-        Iterator<Row> rowIterator = sheet.rowIterator();
-        int count = 0;
-        while (rowIterator.hasNext()) {
-            Row row = rowIterator.next();
-            if (count == 0) {
-                ++count;
-                continue;
-            } else {
-                // Now let's iterate over the columns of the current row
-                Iterator<Cell> cellIterator = row.cellIterator();
-                while (cellIterator.hasNext()) {
-                    Cell cell = cellIterator.next();
-                    resul += String.valueOf(getCellValue(cell, evaluator) + "-");
+    public List<String> importFileExcel(MultipartFile file) throws IOException {
+        List<String> errors = new ArrayList<>();
+        InputStream fileInputStream = file.getInputStream();
+        employees = new ArrayList<>();
+        workbook = new XSSFWorkbook(fileInputStream);
+        sheet = workbook.getSheetAt(0);
+        int rowCount;
+        int cellIndex;
+        boolean isValid;
+        for (Row row : sheet) {
+            rowCount = row.getRowNum();
+            if (rowCount == 0) continue;
+            EmployeeDto employeeDTO = new EmployeeDto();
+            isValid = true;
+            for (Cell cell : row) {
+                cellIndex = cell.getColumnIndex();
+                getCellValue(cellIndex, row, employeeDTO);
+                ErrorMessage message = validateEmployee(employeeDTO, cellIndex);
+                if (!SUCCESS.equals(message)) {
+                    errors.add(message.getMessage() + " Hàng: " + rowCount + "  Cột: " + cellIndex);
+                    isValid = false;
                 }
-                EmployeeDTO employeeDTO = new EmployeeDTO();
-              //  listEmployeeDto.add(employeeDTO.formatTheLineToObject((String) resul));
-                resul="";
-                System.out.println(resul);
+            }
+            if (isValid) {
+                Employee employee = new Employee();
+                employeeService.setEntity(employee, employeeDTO, Constants.INSERT);
+                employeeService.save(employee);
             }
         }
-        return listEmployeeDto;
+        return errors;
+    }
+
+    public void getCellValue(int cellIndex, Row row, EmployeeDto employeeDTO) {
+        GetCellValueIndex getCellValueIndex = GetCellValueIndex.values()[cellIndex];
+        switch (getCellValueIndex) {
+            case Code:
+                employeeDTO.setCode(formatter.formatCellValue(row.getCell(cellIndex)));
+                break;
+            case Name:
+                employeeDTO.setName(formatter.formatCellValue(row.getCell(cellIndex)));
+                break;
+            case Email:
+                employeeDTO.setEmail(formatter.formatCellValue(row.getCell(cellIndex)));
+                break;
+            case Phone:
+                employeeDTO.setPhone(formatter.formatCellValue(row.getCell(cellIndex)));
+                break;
+            case Age:
+                employeeDTO.setAge(Integer.parseInt(formatter.formatCellValue(row.getCell(cellIndex))));
+                break;
+            case Province:
+                ProvinceDto provinceDto = new ProvinceDto();
+                provinceDto.setId(UUID.fromString(formatter.formatCellValue(row.getCell(cellIndex))));
+                employeeDTO.setProvinceDto(provinceDto);
+                break;
+            case District:
+                DistrictDto districtDto = new DistrictDto();
+                districtDto.setId(UUID.fromString(formatter.formatCellValue(row.getCell(cellIndex))));
+                employeeDTO.setDistrictDto(districtDto);
+                break;
+            case Commune:
+                CommuneDto communeDto = new CommuneDto();
+                communeDto.setId(UUID.fromString(formatter.formatCellValue(row.getCell(cellIndex))));
+                employeeDTO.setCommuneDto(communeDto);
+                break;
+            default:
+                break;
+        }
     }
 }

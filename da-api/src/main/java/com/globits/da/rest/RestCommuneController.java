@@ -3,11 +3,9 @@ package com.globits.da.rest;
 import com.globits.da.common.ErrorMessage;
 import com.globits.da.domain.Commune;
 import com.globits.da.dto.CommuneDto;
-import com.globits.da.dto.ResponseRequest;
+import com.globits.da.dto.ResponseData;
 import com.globits.da.service.CommuneService;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -15,76 +13,43 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+import static com.globits.da.common.ErrorMessage.*;
+
 @RestController
 @RequestMapping("/api/communes")
 public class RestCommuneController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RestCommuneController.class);
     @Autowired
-    CommuneService communeService;
-    @Autowired
-    ModelMapper modelMapper;
-
+    private CommuneService communeService;
     @GetMapping("/list")
-    public ResponseRequest<List<CommuneDto>> getAll() {
+    public ResponseData<List<CommuneDto>> getAll() {
         List<CommuneDto> listDistrict = communeService.getAll();
-        if (listDistrict.isEmpty()) {
-            return new ResponseRequest<>(
-                    ErrorMessage.LIST_IS_EMPTY.getCode(),
-                    ErrorMessage.LIST_IS_EMPTY.getMessage(),
-                    listDistrict);
-        }
-        return new ResponseRequest<>(
-                ErrorMessage.SUCCESS.getCode(),
-                ErrorMessage.SUCCESS.getMessage(),
-                listDistrict);
+        if (listDistrict.isEmpty())
+            return new ResponseData<>(LIST_IS_EMPTY, listDistrict);
+        return new ResponseData<>(listDistrict);
     }
 
-    @PostMapping("/insert")
-    public ResponseRequest<CommuneDto> insert(@RequestBody CommuneDto communeDto) {
-        String resultErrorMessage = communeService.insert(communeDto).getMessageError();
-        int resultErrorCode = communeService.insert(communeDto).getStatusCode();
-        if (resultErrorMessage.equals(ErrorMessage.SUCCESS.getMessage())) {
-            return new ResponseRequest<CommuneDto>(
-                    ErrorMessage.SUCCESS.getCode(),
-                    ErrorMessage.SUCCESS.getMessage(),
-                    communeDto);
-        }
-        return new ResponseRequest<CommuneDto>(
-                resultErrorCode,
-                resultErrorMessage,
-                communeDto);
+    @PostMapping()
+    public ResponseData<CommuneDto> insert(@RequestBody CommuneDto communeDto) {
+        ResponseData<CommuneDto> errMessage = communeService.insert(communeDto);
+        if (errMessage.getMessageError().equals(SUCCESS.getMessage()))
+            return new ResponseData<>(errMessage.getData());
+        return new ResponseData<>(errMessage.getStatusCode(), errMessage.getMessageError(), null);
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseRequest<CommuneDto> update(@PathVariable(name = "id") UUID id, @RequestBody CommuneDto communeDto) {
-        String resultErrorMessage = communeService.update(id, communeDto).getMessageError();
-        int resultErrorCode = communeService.update(id, communeDto).getStatusCode();
-        if (resultErrorMessage.equals(ErrorMessage.SUCCESS.getMessage())) {
-            return new ResponseRequest<CommuneDto>(
-                    ErrorMessage.SUCCESS.getCode(),
-                    ErrorMessage.SUCCESS.getMessage(),
-                    communeDto);
-        }
-        return new ResponseRequest<CommuneDto>(
-                resultErrorCode,
-                resultErrorMessage,
-                communeDto);
+    @PutMapping("/{id}")
+    public ResponseData<CommuneDto> update(@PathVariable(name = "id") UUID id, @RequestBody CommuneDto communeDto) {
+        ResponseData<CommuneDto> errMessage = communeService.update(id, communeDto);
+        if (errMessage.getMessageError().equals(SUCCESS.getMessage()))
+            return new ResponseData<>(errMessage.getData());
+        return new ResponseData<>(errMessage.getStatusCode(), errMessage.getMessageError(), null);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseRequest<CommuneDto> delete(@PathVariable("id") UUID id) {
+    @DeleteMapping("/{id}")
+    public ResponseData<CommuneDto> delete(@PathVariable("id") UUID id) {
         Commune commune = communeService.findById(id);
-        if (communeService.deleteById(id)) {
-            LOGGER.info("Delete Success");
-            return new ResponseRequest<>(
-                    ErrorMessage.SUCCESS.getCode(),
-                    ErrorMessage.SUCCESS.getMessage(), modelMapper.map(commune, CommuneDto.class));
-        } else {
-            LOGGER.info("Delete Not Success");
-            return new ResponseRequest<>(ErrorMessage.ID_NOT_EXIST.getCode(),
-                    ErrorMessage.ID_NOT_EXIST.getMessage(),
-                    null);
-        }
+        if (communeService.deleteById(id))
+            return new ResponseData<>(CommuneDto.toDto(commune));
+        return new ResponseData<>(ID_NOT_EXIST, null);
     }
 
     @GetMapping("/page")
@@ -94,5 +59,4 @@ public class RestCommuneController {
         }
         return communeService.getPage(pageIndex, pageSize);
     }
-
 }

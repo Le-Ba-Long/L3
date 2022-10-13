@@ -10,7 +10,9 @@ import java.util.UUID;
 public interface CertificateRepository extends JpaRepository<Certificate, UUID> {
     Boolean existsCertificateById(UUID id);
 
-    Boolean existsCertificateByCode(String code);
+    Certificate getById(UUID id);
 
-    Boolean existsCertificateByName(String name);
+    boolean existsCertificateByCode(String code);
+
+    boolean existsCertificateByName(String name);
 }

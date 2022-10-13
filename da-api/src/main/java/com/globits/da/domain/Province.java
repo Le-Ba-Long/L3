@@ -17,13 +17,20 @@ import java.util.List;
 @Entity
 @Table(name = "province")
 public class Province extends BaseObject {
+
     @Column(name = "code", columnDefinition = "nvarchar(255)", nullable = false)
     private String code;
+
     @Column(name = "name", columnDefinition = "nvarchar(255)", nullable = false)
     private String name;
-    @OneToMany(mappedBy = "province",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+
+    @OneToMany(mappedBy = "province", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     List<District> districts = new ArrayList<>();
-    @OneToOne(mappedBy = "province",cascade = CascadeType.ALL)
-    Certificate certificate;
+
+//    @OneToOne(cascade = CascadeType.ALL)
+//    Certificate certificate;
+
+//    @OneToMany(mappedBy = "province", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+//    List<Employee> employees = new ArrayList<>();
 
 }

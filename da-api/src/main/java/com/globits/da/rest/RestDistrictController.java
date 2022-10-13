@@ -1,102 +1,62 @@
 package com.globits.da.rest;
 
-import com.globits.da.common.ErrorMessage;
 import com.globits.da.domain.District;
 import com.globits.da.dto.DistrictDto;
-import com.globits.da.dto.ResponseRequest;
+import com.globits.da.dto.ResponseData;
 import com.globits.da.service.DistrictService;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+import static com.globits.da.common.ErrorMessage.*;
+
 @RestController
 @RequestMapping("/api/districts")
 public class RestDistrictController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RestDistrictController.class);
+
     @Autowired
-    DistrictService districtService;
+    private DistrictService districtService;
     @Autowired
-    ModelMapper modelMapper;
+    private ModelMapper modelMapper;
 
     @GetMapping("/list")
-    public ResponseRequest<List<DistrictDto>> getAll() {
+    public ResponseData<List<DistrictDto>> getAll() {
         List<DistrictDto> listDistrict = districtService.getAll();
-        if (listDistrict.isEmpty()) {
-            return new ResponseRequest<>(
-                    ErrorMessage.LIST_IS_EMPTY.getCode(),
-                    ErrorMessage.LIST_IS_EMPTY.getMessage(),
-                    listDistrict);
-        }
-        return new ResponseRequest<>(
-                ErrorMessage.SUCCESS.getCode(),
-                ErrorMessage.SUCCESS.getMessage(),
-                listDistrict);
+        if (listDistrict.isEmpty()) return new ResponseData<>(LIST_IS_EMPTY, listDistrict);
+        return new ResponseData<>(listDistrict);
     }
 
-    @PostMapping("/insert")
-    public ResponseRequest<?> insert(@RequestBody DistrictDto districtDto) {
-        String resultErrorMessage = districtService.insert(districtDto).getMessageError();
-        int resultErrorCode = districtService.insert(districtDto).getStatusCode();
-        if (resultErrorMessage.equals(ErrorMessage.SUCCESS.getMessage())) {
-            return new ResponseRequest<DistrictDto>(
-                    ErrorMessage.SUCCESS.getCode(),
-                    ErrorMessage.SUCCESS.getMessage(),
-                    districtDto);
-        }
-        return new ResponseRequest<DistrictDto>(
-                resultErrorCode,
-                resultErrorMessage,
-                districtDto);
-
+    @PostMapping()
+    public ResponseData<DistrictDto> insert(@RequestBody DistrictDto districtDto) {
+        ResponseData<DistrictDto> resultErrorMessage = districtService.insert(districtDto);
+        if (resultErrorMessage.getMessageError().equals(SUCCESS.getMessage()))
+            return new ResponseData<>(resultErrorMessage.getData());
+        return new ResponseData<>(resultErrorMessage.getStatusCode(), resultErrorMessage.getMessageError(), null);
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseRequest<DistrictDto> update(@PathVariable(name = "id") UUID id, @RequestBody DistrictDto districtDto) {
-        String resultErrorMessage = districtService.update(id, districtDto).getMessageError();
-        int resultErrorCode = districtService.update(id, districtDto).getStatusCode();
-        if (resultErrorMessage.equals(ErrorMessage.SUCCESS.getMessage())) {
-            return new ResponseRequest<DistrictDto>(
-                    ErrorMessage.SUCCESS.getCode(),
-                    ErrorMessage.SUCCESS.getMessage(),
-                    districtDto);
-        }
-        return new ResponseRequest<DistrictDto>(
-                resultErrorCode,
-                resultErrorMessage,
-                districtDto);
+    @PutMapping("/{id}")
+    public ResponseData<DistrictDto> update(@PathVariable UUID id, @RequestBody DistrictDto districtDto) {
+        ResponseData<DistrictDto> resultErrorMessage = districtService.update(id, districtDto);
+        if (resultErrorMessage.getMessageError().equals(SUCCESS.getMessage()))
+            return new ResponseData<>(resultErrorMessage.getData());
+        return new ResponseData<>(resultErrorMessage.getStatusCode(), resultErrorMessage.getMessageError(), null);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseRequest<DistrictDto> delete(@PathVariable("id") UUID id) {
+    @DeleteMapping("/{id}")
+    public ResponseData<DistrictDto> delete(@PathVariable("id") UUID id) {
         District district = districtService.findById(id);
-        if (districtService.deleteById(id)) {
-            LOGGER.info("Delete Success");
-            return new ResponseRequest<>(
-                    ErrorMessage.SUCCESS.getCode(),
-                    ErrorMessage.SUCCESS.getMessage(), modelMapper.map(district, DistrictDto.class));
-        } else {
-            LOGGER.info("Delete Not Success");
-            return new ResponseRequest<>(ErrorMessage.ID_NOT_EXIST.getCode(),
-                    ErrorMessage.ID_NOT_EXIST.getMessage(),
-                    null);
-        }
+        if (districtService.deleteById(id)) return new ResponseData<>(modelMapper.map(district, DistrictDto.class));
+        return new ResponseData<>(ID_NOT_EXIST, null);
     }
 
     @GetMapping("/list/{id}")
-    ResponseRequest<List<DistrictDto>> findAllDistrictByProvinceId(@PathVariable("id") UUID provinceId) {
+    ResponseData<List<DistrictDto>> findAllDistrictByProvinceId(@PathVariable("id") UUID provinceId) {
         List<DistrictDto> districtDtoList = districtService.findAllDistrictByProvinceId(provinceId);
-        if (districtDtoList.isEmpty()) {
-            return new ResponseRequest<>(ErrorMessage.LIST_IS_EMPTY.getCode(),
-                    ErrorMessage.LIST_IS_EMPTY.getMessage(),
-                    districtDtoList);
-        }
-        return new ResponseRequest<>(ErrorMessage.SUCCESS.getCode(),
-                ErrorMessage.SUCCESS.getMessage(),
-                districtDtoList);
+        if (districtDtoList.isEmpty()) return new ResponseData<>(LIST_IS_EMPTY, districtDtoList);
+        return new ResponseData<>(districtDtoList);
     }
+
 }

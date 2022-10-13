@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PostDto {
-    private String  code;
-    private  String name;
-    private int age;
+    private String code;
+    private String name;
+    private Integer age;
 }

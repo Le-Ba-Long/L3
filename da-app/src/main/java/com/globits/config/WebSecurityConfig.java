@@ -32,7 +32,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	private CorsFilter corsFilter;
 
 	@Autowired
-	public void globalUserDetails(final AuthenticationManagerBuilder auth) throws Exception {
+	public void globalUserDetails(final AuthenticationManagerBuilder auth){
 
 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
 		provider.setPasswordEncoder(new BCryptPasswordEncoder());
@@ -66,8 +66,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 				.antMatchers("/oauth/**").permitAll()
 
 				.antMatchers("/admin/**").fullyAuthenticated()
-
-				.antMatchers("/api/**").permitAll()
 
 				.anyRequest().authenticated()
 

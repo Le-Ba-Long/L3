@@ -9,9 +9,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class ResponseRequest<T> {
-    private  int statusCode;
-    private String messageError;
-    private T data;
-
+public class ContainQueryData {
+    private  String name;
+    private double percent;
 }
